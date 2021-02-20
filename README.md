@@ -11,7 +11,7 @@ $ chmod +x voc.py
 ```
 
 ## Usage
-```bash
+```
 $./voc.py -h
 usage: Voc [-h] [-v] [-o] [-s] listname
 
