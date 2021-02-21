@@ -4,18 +4,21 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.02.20
-version = '1.1'
+# Date      :   2021.02.21
+version = '1.2'
 #
 #--------------------------------------------------
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
+    # Get time passed on every word ;
     # Maybe a QCM ;
 
 ##-import
 from random import shuffle
 from ast import literal_eval
+
+from datetime import datetime as dt
 
 from os.path import isfile
 import sys
@@ -106,20 +109,41 @@ class VocFile:
         
 
 ##-main
-def learn(d, mode=0):
+def learn(d, mode=0, n=0):
     '''
     Learn by asking :
         - [lang] with french shown if mode is 0 ;
         - french with [lang] shown if mode is 1.
+    
+    - d : the vocabulary list, of the form {0: ('fra', 'ita'), 1: ('fra2', 'ita2'), ...} ;
+    - mode : indicate the learn direction ;
+    - n : the number of words to learn. If n == 0, learn all the words in the list. If 0 < n < len(d), the function remove the words randomly.
     '''
     
+    if mode not in (0, 1):
+        raise ValueError('The mode should be in (0, 1), but "{}" was found !'.format(mode))
+    
+    if n < 0:
+        raise ValueError('The argument "n" can not be negative ! ("{}" found)'.format(n))
+    
+    if n > len(d):
+        print('n is bigger than the number of words. Only {} words will be learned.\n'.format(len(d)))
+    
+    old_len = len(d)
     shuffle(d)
+    
+    if n != 0:
+        for k in range(len(d)):
+            if (k + 1) > n:
+                del d[k]
+    
     md1 = (1, 0)[mode]
     lth = len(d)
     wrong = []
     i = 0
     
     print('Press <ctrl> + C to interrupt, anytime')
+    t0 = dt.now()
     
     for j, k in enumerate(d):
         try:
@@ -135,11 +159,14 @@ def learn(d, mode=0):
     
         except KeyboardInterrupt:
             if j == 0:
+                print('')
                 sys.exit()
                 
             break
     
-    print('\nScore : {} good, {} wrong, on {} words (out of {}).\nPercentage : {}% good'.format(i, len(wrong), i + len(wrong), lth, round(i / (i + len(wrong)) * 100)))
+    t = dt.now() - t0
+    
+    print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t))
     
     if len(wrong) > 0:
         print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
@@ -154,8 +181,8 @@ class Parser:
 
         self.parser = argparse.ArgumentParser(
             prog='Voc',
-            description='Help to learn voc.',
-            epilog="Examples :\n\tLearn list 'list.txt' :   ./voc.py list.txt\n\tLearn opposite way    :   ./voc.py -o list.txt\n\tSave a new list       :   ./voc.py -s filename.txt",
+            description='Help to learn vocabulary.',
+            epilog="Examples :\n\tLearn list 'list.txt' :   ./voc.py list.txt\n\tLearn opposite way    :   ./voc.py -o list.txt\n\tSave a new list       :   ./voc.py -s filename.txt\n\tLearn 10 words        :   ./voc.py -n 10 list.txt",
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
 
@@ -182,6 +209,12 @@ class Parser:
             help='Save a new file.',
             action='store_true'
         )
+
+        self.parser.add_argument(
+            '-n', '--number',
+            help='The number of words asked. If it is 0, learn all the words.',
+            type=int
+        )
         
     
     def parse(self):
@@ -194,7 +227,13 @@ class Parser:
             VocFile(args.listname).write()
         
         else:
-            learn(VocFile(args.listname).read(), args.opposite)
+            n = (args.number, 0)[args.number == None]
+            
+            if n < 0:
+                print('The argument "n" can not be negative ! ("{}" found)'.format(n))
+                sys.exit(-1)
+            
+            learn(VocFile(args.listname).read(), args.opposite, n)
 
 
     class Version(argparse.Action):
