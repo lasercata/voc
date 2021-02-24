@@ -13,7 +13,7 @@ $ chmod +x voc.py
 ## Usage
 ```
 $./voc.py -h
-usage: Voc [-h] [-v] [-o] [-s] [-n NUMBER] listname
+usage: voc [-h] [-v] [-o] [-s] [-a] [-n NUMBER] listname
 
 Help to learn vocabulary.
 
@@ -25,6 +25,7 @@ optional arguments:
   -v, --version         Show Voc version and exit
   -o, --opposite        Reverse learning mode (if learning italian, write in your lang instead of in italian).
   -s, --save            Save a new file.
+  -a, --append          Append new words to an existing file.
   -n NUMBER, --number NUMBER
                         The number of words asked. If it is 0, learn all the words.
 
