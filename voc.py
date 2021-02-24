@@ -4,8 +4,8 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.02.21
-version = '1.2'
+# Date      :   2021.02.24
+version = '1.2.1'
 #
 #--------------------------------------------------
 
@@ -88,7 +88,16 @@ class VocFile:
             except KeyboardInterrupt:
                 break
 
-        return set_dict(d)
+        return d
+    
+    
+    def _write(self, d):
+        '''Write `d` in the file.'''
+        
+        d_str = set_dict(d) + '\n'
+        
+        with open(self.fn, 'w') as f:
+            f.write(d_str)
     
     
     def write(self):
@@ -102,10 +111,22 @@ class VocFile:
             if o == 'n':
                 return 0
         
-        d_str = self._get_dct()
+        d = self._get_dct()
+        self._write(d)
+    
+    
+    def extend(self):
+        '''Same as self.write, but extand an existing file.'''
         
-        with open(self.fn, 'w') as f:
-            f.write(d_str)
+        d = self.read()
+        i = len(d) - 1
+        
+        d_new = self._get_dct()
+        
+        for k in d_new:
+            d[k + i] = d_new[k]
+        
+        self._write(d)
         
 
 ##-main
@@ -180,8 +201,8 @@ class Parser:
         '''Initiate Parser'''
 
         self.parser = argparse.ArgumentParser(
-            prog='Voc',
-            description='Help to learn vocabulary.',
+            prog='voc',
+            description='Help to learn vocabulary.\nVersion : v' + version,
             epilog="Examples :\n\tLearn list 'list.txt' :   ./voc.py list.txt\n\tLearn opposite way    :   ./voc.py -o list.txt\n\tSave a new list       :   ./voc.py -s filename.txt\n\tLearn 10 words        :   ./voc.py -n 10 list.txt",
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
@@ -211,6 +232,12 @@ class Parser:
         )
 
         self.parser.add_argument(
+            '-a', '--append',
+            help='Append new words to an existing file.',
+            action='store_true'
+        )
+
+        self.parser.add_argument(
             '-n', '--number',
             help='The number of words asked. If it is 0, learn all the words.',
             type=int
@@ -223,7 +250,10 @@ class Parser:
         #------Check arguments
         args = self.parser.parse_args()
         
-        if args.save:
+        if args.append:
+            VocFile(args.listname).extend()
+        
+        elif args.save:
             VocFile(args.listname).write()
         
         else:
