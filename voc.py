@@ -202,7 +202,7 @@ class Parser:
 
         self.parser = argparse.ArgumentParser(
             prog='voc',
-            description='Help to learn vocabulary.\nVersion : v' + version,
+            description='Help to learn vocabulary.',
             epilog="Examples :\n\tLearn list 'list.txt' :   ./voc.py list.txt\n\tLearn opposite way    :   ./voc.py -o list.txt\n\tSave a new list       :   ./voc.py -s filename.txt\n\tLearn 10 words        :   ./voc.py -n 10 list.txt",
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
