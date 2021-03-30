@@ -4,15 +4,15 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.02.24
-version = '1.2.1'
+# Date      :   2021.03.30
+version = '1.2.2'
 #
 #--------------------------------------------------
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
-    # Get time passed on every word ;
     # Maybe a QCM ;
+    # Analyse answer (to not set wrong if there is an error while typing) ;
 
 ##-import
 from random import shuffle
@@ -48,6 +48,19 @@ def set_str(obj):
         return "'{}'".format(obj)
 
     return '{}'.format(obj)
+
+
+def set_good_len(word, mx, opposite=False):
+    '''return word formated to have length of mx'''
+    
+    while len(word) < mx:
+        if opposite:
+            word = ' ' + word
+        
+        else:
+            word += ' '
+    
+    return word
 
 
 class VocFile:
@@ -127,6 +140,22 @@ class VocFile:
             d[k + i] = d_new[k]
         
         self._write(d)
+    
+    def display(self, opposite=True, view_md=0):
+        '''
+        Outputs to the screen the vocabulary list `self.fn`.
+        
+        - opposite : reverse the columns if True ;
+        - view_md : an int which, if odd, change the view mode (space before the words in the first column instead of after).
+        '''
+        
+        d = self.read()
+        mx = max(len(d[k][0]) for k in d)
+        
+        print('\nList "{}" :'.format(self.fn))
+        
+        for k in d:
+            print('\t{} : {}'.format(set_good_len(d[k][opposite], mx, view_md % 2), d[k][not opposite]))
         
 
 ##-main
@@ -187,7 +216,7 @@ def learn(d, mode=0, n=0):
     
     t = dt.now() - t0
     
-    print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t))
+    print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s\nTime per word average : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t, t / (i + len(wrong))))
     
     if len(wrong) > 0:
         print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
@@ -238,6 +267,13 @@ class Parser:
         )
 
         self.parser.add_argument(
+            '-d', '--display',
+            #dest='LIST',
+            help='Display the vocabulary list `listname`. The flag -o reverse the columns. The flag -n 1 change the view mode (space before the words in the first column instead of after).',
+            action='store_true'
+        )
+
+        self.parser.add_argument(
             '-n', '--number',
             help='The number of words asked. If it is 0, learn all the words.',
             type=int
@@ -250,7 +286,10 @@ class Parser:
         #------Check arguments
         args = self.parser.parse_args()
         
-        if args.append:
+        if args.display:
+            VocFile(args.listname).display(args.opposite, (args.number, 0)[args.number == None])
+        
+        elif args.append:
             VocFile(args.listname).extend()
         
         elif args.save:
