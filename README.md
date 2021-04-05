@@ -23,11 +23,13 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Show Voc version and exit
-  -o, --opposite        Reverse learning mode (if learning italian, write in your lang instead of in italian).
+  -o, --opposite        Reverse learning mode (if learning italian, write in your lang instead of
+                        in italian).
   -s, --save            Save a new file.
   -a, --append          Append new words to an existing file.
-  -d, --display         Display the vocabulary list `listname`. The flag -o reverse the columns. The flag -n 1
-                        change the view mode (space before the words in the first column instead of after).
+  -d, --display         Display the vocabulary list `listname`. The flag -o reverse the columns. The
+                        flag -n 1 change the view mode (space before the words in the first column
+                        instead of after).
   -n NUMBER, --number NUMBER
                         The number of words asked. If it is 0, learn all the words.
 
