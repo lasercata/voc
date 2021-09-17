@@ -4,8 +4,8 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.03.30
-version = '1.2.2'
+# Date      :   2021.09.17
+version = '1.2.3'
 #
 #--------------------------------------------------
 
@@ -132,7 +132,7 @@ class VocFile:
         '''Same as self.write, but extand an existing file.'''
         
         d = self.read()
-        i = len(d) - 1
+        i = len(d)
         
         d_new = self._get_dct()
         
