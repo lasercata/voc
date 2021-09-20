@@ -4,8 +4,8 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.09.17
-version = '1.2.3'
+# Date      :   2021.09.20
+version = '1.3.0'
 #
 #--------------------------------------------------
 
@@ -19,6 +19,7 @@ from random import shuffle
 from ast import literal_eval
 
 from datetime import datetime as dt
+from time import sleep
 
 from os.path import isfile
 import sys
@@ -69,8 +70,8 @@ class VocFile:
     def __init__(self, fn):
         '''Initiate obj'''
         
-        if fn[-4:] != '.txt':
-            fn += '.txt'
+        #if fn[-4:] != '.txt':
+            #fn += '.txt'
         
         self.fn = fn
     
@@ -314,8 +315,85 @@ class Parser:
             parser.exit()
 
 
+class Menu:
+    '''Defining a menu.'''
+    
+    def __init__(self):
+        '''Initiate this class'''
+        
+        pass
+    
+    def ask_fn(self):
+        '''Ask the user for the filename.'''
+        
+        fn = input('Enter the filename :\n>')
+            
+        if (fn[-4:] != '.txt') and (not isfile(fn)) and (isfile(fn + '.txt')):
+            fn += '.txt'
+        
+        return fn
+    
+    
+    def show(self):
+        
+        try:
+            self.show_()
+        
+        except KeyboardInterrupt:
+            if input('Exit ? (y/n)') == 'y':
+                sys.exit()
+        
+    
+    def show_(self):
+        '''Show a menu'''
+        
+        while True:
+            print('\n\nMenu :')
+            print('    0.Quit')
+            print('    ----------------')
+            print('    1.Learn a list')
+            print('    2.Save a NEW list')
+            print('    3.Append to a list')
+            print('    4.Display a list')
+            print('    ----------------')
+            print('    5.Show version')
+            
+            c = input('\n>')
+            
+            if c.lower() in ('0', 'exit', 'quit', 'q'):
+                sys.exit()
+            
+            elif c == '1':
+                learn(VocFile(self.ask_fn()).read())
+                sleep(1)
+            
+            elif c == '2':
+                VocFile(self.ask_fn()).write()
+                sleep(0.5)
+            
+            elif c == '3':
+                VocFile(self.ask_fn()).extend()
+                sleep(0.5)
+            
+            elif c == '4':
+                VocFile(self.ask_fn()).display()
+                sleep(0.5)
+            
+            elif c == '5':
+                print(f'Voc v{version}')
+                sleep(1)
+            
+            else:
+                print('"{}" is NOT an option of this menu !!!'.format(c))
+                sleep(0.5)
+
+
 ##-run
 if __name__ == '__main__':
     
-    app = Parser()
-    app.parse()
+    if len(sys.argv) > 1:
+        app = Parser()
+        app.parse()
+    
+    else:
+        Menu().show()
