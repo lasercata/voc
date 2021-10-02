@@ -4,8 +4,8 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.09.20
-version = '1.3.0'
+# Date      :   2021.10.02
+version = '1.3.1'
 #
 #--------------------------------------------------
 
@@ -88,7 +88,7 @@ class VocFile:
         return literal_eval(d_str)
     
     
-    def _get_dct(self):
+    def _get_dct(self, sep=','):
         d = {}
         i = 0
 
@@ -96,7 +96,11 @@ class VocFile:
 
         while True:
             try:
-                d[i] = tuple(input('Words (fra,[lang]), separeted by a comma :').split(','))
+                d[i] = tuple(input(f'Words (fra,[lang]), separeted by "{sep}" :').split(sep))
+                
+                for k in d[i]:
+                    d[i][k] = d[i][k].strip(' ') #remove the spaces at the begin and at the end of the words
+
                 i += 1
 
             except KeyboardInterrupt:
@@ -198,7 +202,10 @@ def learn(d, mode=0, n=0):
     
     for j, k in enumerate(d):
         try:
-            answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, d[k][mode]))
+            answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, d[k][mode])).strip(' ')
+
+            if d[k][md1][-1] not in ('$', '*') and answer[-1] in ('$', '*'):
+                answer = answer[:-1] # Remove '$' or '*' at the end of the answer if misclicked.
             
             if answer == d[k][md1]:
                 print('Good !')
