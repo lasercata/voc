@@ -15,7 +15,7 @@ version = '1.3.1'
     # Analyse answer (to not set wrong if there is an error while typing) ;
 
 ##-import
-from random import shuffle
+from random import shuffle, randint
 from ast import literal_eval
 
 from datetime import datetime as dt
@@ -23,6 +23,8 @@ from time import sleep
 
 from os.path import isfile
 import sys
+
+import platform
 
 #------For parser
 import argparse
@@ -176,8 +178,8 @@ def learn(d, mode=0, n=0):
     - n : the number of words to learn. If n == 0, learn all the words in the list. If 0 < n < len(d), the function remove the words randomly.
     '''
     
-    if mode not in (0, 1):
-        raise ValueError('The mode should be in (0, 1), but "{}" was found !'.format(mode))
+    if mode not in (0, 1, 2):
+        raise ValueError('The mode should be in (0, 1, 2), but "{}" was found !'.format(mode))
     
     if n < 0:
         raise ValueError('The argument "n" can not be negative ! ("{}" found)'.format(n))
@@ -193,7 +195,13 @@ def learn(d, mode=0, n=0):
             if (k + 1) > n:
                 del d[k]
     
-    md1 = (1, 0)[mode]
+    if mode == 2:
+        pass
+    
+    else:
+        md = int(mode)
+        md1 = (1, 0)[md]
+        
     lth = len(d)
     wrong = []
     i = 0
@@ -203,10 +211,15 @@ def learn(d, mode=0, n=0):
     
     for j, k in enumerate(d):
         try:
-            answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, d[k][mode])).strip(' ')
+            if mode == 2:
+                md = randint(0, 1)
+                md1 = (1, 0)[md]
+                
+            answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, d[k][md])).strip(' ')
 
-            if d[k][md1][-1] not in ('$', '*') and answer[-1] in ('$', '*'):
-                answer = answer[:-1] # Remove '$' or '*' at the end of the answer if misclicked.
+            if d[k][md1][-1] not in ('$', '*', '7') and len(answer) > 0:
+                if answer[-1] in ('$', '*', '7'):
+                    answer = answer[:-1] # Remove '$' or '*' or '7' at the end of the answer if miss-clicked.
             
             if answer == d[k][md1]:
                 print('Good !')
@@ -264,6 +277,12 @@ class Parser:
         )
 
         self.parser.add_argument(
+            '-r', '--random',
+            help='Randomise the learning mode (ask in both languages). If used with "-o", only this is taken in account.',
+            action='store_true'
+        )
+
+        self.parser.add_argument(
             '-s', '--save',
             help='Save a new file.',
             action='store_true'
@@ -307,11 +326,15 @@ class Parser:
         else:
             n = (args.number, 0)[args.number == None]
             
+            mode = args.opposite
+            if args.random:
+                mode = 2
+            
             if n < 0:
                 print('The argument "n" can not be negative ! ("{}" found)'.format(n))
                 sys.exit(-1)
             
-            learn(VocFile(args.listname).read(), args.opposite, n)
+            learn(VocFile(args.listname).read(), mode, n)
 
 
     class Version(argparse.Action):
@@ -360,34 +383,44 @@ class Menu:
             print('    0.Quit')
             print('    ----------------')
             print('    1.Learn a list')
-            print('    2.Save a NEW list')
-            print('    3.Append to a list')
-            print('    4.Display a list')
+            print('    2.Learn list with random language input')
+            print('    3.Save a NEW list')
+            print('    4.Append to a list')
+            print('    5.Display a list')
             print('    ----------------')
-            print('    5.Show version')
+            print('    v.Show version')
             
             c = input('\n>')
             
             if c.lower() in ('0', 'exit', 'quit', 'q'):
-                sys.exit()
+                if platform.system() == 'Windows':
+                    if input('Sure ? (y/n) :\n>').lower() in ('y', 'yes', 'o', 'oui'):
+                        sys.exit()
+                
+                else:
+                    sys.exit()
             
             elif c == '1':
                 learn(VocFile(self.ask_fn()).read())
                 sleep(1)
             
             elif c == '2':
+                learn(VocFile(self.ask_fn()).read(), mode=2)
+                sleep(1)
+            
+            elif c == '3':
                 VocFile(self.ask_fn()).write()
                 sleep(0.5)
             
-            elif c == '3':
+            elif c == '4':
                 VocFile(self.ask_fn()).extend()
                 sleep(0.5)
             
-            elif c == '4':
+            elif c == '5':
                 VocFile(self.ask_fn()).display()
                 sleep(0.5)
             
-            elif c == '5':
+            elif c == 'v':
                 print(f'Voc v{version}')
                 sleep(1)
             
