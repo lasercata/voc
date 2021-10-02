@@ -96,11 +96,12 @@ class VocFile:
 
         while True:
             try:
-                d[i] = tuple(input(f'Words (fra,[lang]), separeted by "{sep}" :').split(sep))
+                d[i] = input(f'Words (fra,[lang]), separeted by "{sep}" :').split(sep)
                 
-                for k in d[i]:
-                    d[i][k] = d[i][k].strip(' ') #remove the spaces at the begin and at the end of the words
+                for j, k in enumerate(d[i]):
+                    d[i][j] = k.strip(' ') #remove the spaces at the begin and at the end of the words
 
+                d[i] = tuple(d[i])
                 i += 1
 
             except KeyboardInterrupt:
