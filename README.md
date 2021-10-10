@@ -1,5 +1,5 @@
 # voc
-Python3 Argparse script which help to learn vocabulary
+Python3 Argparse script which help to learn vocabulary. Also available in menu console mode (execute it without arguments).
 
 ## Installing
 Download the script `voc.py` ;
@@ -13,7 +13,7 @@ $ chmod +x voc.py
 ## Usage
 ```
 $./voc.py -h
-usage: voc [-h] [-v] [-o] [-r] [-s] [-a] [-d] [-n NUMBER] listname
+usage: voc [-h] [-v] [-o] [-r] [-s] [-a] [-D URL] [-d] [-n NUMBER] listname
 
 Help to learn vocabulary.
 
@@ -23,13 +23,16 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -v, --version         Show Voc version and exit
-  -o, --opposite        Reverse learning mode (if learning italian, write in your lang instead of in italian).
-  -r, --random          Randomise the learning mode (ask in both languages). If used with "-o", only this is taken
-                        in account.
+  -o, --opposite        Reverse learning mode (write definitions instead of terms).
+  -r, --random          Randomise the learning mode (ask for both terms and definitions). If used with
+                        "-o", only this is taken in account.
   -s, --save            Save a new file.
   -a, --append          Append new words to an existing file.
-  -d, --display         Display the vocabulary list `listname`. The flag -o reverse the columns. The flag -n 1
-                        change the view mode (space before the words in the first column instead of after).
+  -D URL, --download URL
+                        Download a list from a Quizlet link.
+  -d, --display         Display the vocabulary list `listname`. The flag -o reverse the columns. The
+                        flag -n 1 change the view mode (space before the words in the first column
+                        instead of after).
   -n NUMBER, --number NUMBER
                         The number of words asked. If it is 0, learn all the words.
 
