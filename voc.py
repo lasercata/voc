@@ -4,15 +4,16 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.10.02
-version = '1.3.1'
+# Date      :   2021.10.10
+# Version   :   v1.4.0
+# Github    :   https://github.com/lasercata/voc
 #
 #--------------------------------------------------
 
+version = '1.4.0'
+
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
-    # Maybe a QCM ;
-    # Analyse answer (to not set wrong if there is an error while typing) ;
 
 ##-import
 from random import shuffle, randint
@@ -29,19 +30,27 @@ import platform
 #------For parser
 import argparse
 
+#------For Quizlet downloads
+try:
+    from requests_html import HTMLSession
+
+except ModuleNotFoundError:
+    print("It seems that you don't have the module 'requests_html' installed. It is used to download lists from Quizlet. If you want to install it, enter `pip install requests-html` in your console, or visit 'https://docs.python-requests.org/projects/requests-html/en/latest/'")
+    sleep(1)
+
 ##-Useful functions
-def set_dict(dct):
+def set_list(lst):
     '''
-    Return a string representing the dict, with line by line key-value.
-    Usefull to set readable dict in your programs
+    Return a string representing the list, with line by line key-value.
+    Usefull to set readable lists in your programs
     '''
 
-    ret = '{'
+    ret = '['
 
-    for k in dct:
-        ret += '\n\t{}: {},'.format(set_str(k), set_str(dct[k]))
+    for k in lst:
+        ret += '\n\t{},'.format(set_str(k))
 
-    ret = ret[:-1] + '\n}'
+    ret = ret[:-1] + '\n]'
 
     return ret
 
@@ -66,6 +75,7 @@ def set_good_len(word, mx, opposite=False):
     return word
 
 
+##-VocFile
 class VocFile:
     '''Class managing the voc files'''
     
@@ -87,18 +97,23 @@ class VocFile:
         with open(self.fn, 'r') as f:
             d_str = f.read()
         
-        return literal_eval(d_str)
+        d = literal_eval(d_str)
+        
+        if type(d) == dict:
+            return [d[k] for k in d]
+        
+        return d
     
     
-    def _get_dct(self, sep=','):
-        d = {}
+    def _get_dct(self, sep=';'):
+        d = []
         i = 0
 
         print('Type <ctrl> + C to quit.')
 
         while True:
             try:
-                d[i] = input(f'Words (fra,[lang]), separeted by "{sep}" :').split(sep)
+                d.append(input(f'Words (definition, term), separeted by "{sep}" :').split(sep))
                 
                 for j, k in enumerate(d[i]):
                     d[i][j] = k.strip(' ') #remove the spaces at the begin and at the end of the words
@@ -115,7 +130,7 @@ class VocFile:
     def _write(self, d):
         '''Write `d` in the file.'''
         
-        d_str = set_dict(d) + '\n'
+        d_str = set_list(d) + '\n'
         
         with open(self.fn, 'w') as f:
             f.write(d_str)
@@ -140,14 +155,9 @@ class VocFile:
         '''Same as self.write, but extand an existing file.'''
         
         d = self.read()
-        i = len(d)
-        
         d_new = self._get_dct()
         
-        for k in d_new:
-            d[k + i] = d_new[k]
-        
-        self._write(d)
+        self._write(d + d_new)
     
     def display(self, opposite=True, view_md=0):
         '''
@@ -158,90 +168,228 @@ class VocFile:
         '''
         
         d = self.read()
-        mx = max(len(d[k][0]) for k in d)
+        mx = max(len(d[k][opposite]) for k in d)
         
         print('\nList "{}" :'.format(self.fn))
         
         for k in d:
             print('\t{} : {}'.format(set_good_len(d[k][opposite], mx, view_md % 2), d[k][not opposite]))
-        
 
-##-main
-def learn(d, mode=0, n=0):
-    '''
-    Learn by asking :
-        - [lang] with french shown if mode is 0 ;
-        - french with [lang] shown if mode is 1.
-    
-    - d : the vocabulary list, of the form {0: ('fra', 'ita'), 1: ('fra2', 'ita2'), ...} ;
-    - mode : indicate the learn direction ;
-    - n : the number of words to learn. If n == 0, learn all the words in the list. If 0 < n < len(d), the function remove the words randomly.
-    '''
-    
-    if mode not in (0, 1, 2):
-        raise ValueError('The mode should be in (0, 1, 2), but "{}" was found !'.format(mode))
-    
-    if n < 0:
-        raise ValueError('The argument "n" can not be negative ! ("{}" found)'.format(n))
-    
-    if n > len(d):
-        print('n is bigger than the number of words. Only {} words will be learned.\n'.format(len(d)))
-    
-    old_len = len(d)
-    shuffle(d)
-    
-    if n != 0:
-        for k in range(len(d)):
-            if (k + 1) > n:
-                del d[k]
-    
-    if mode == 2:
-        pass
-    
-    else:
-        md = int(mode)
-        md1 = (1, 0)[md]
+
+##-GetQuizletVoc
+class GetQuizletVoc:
+    '''Fetch a vocabulary from Quizlet'''
+
+    def __init__(self, url):
+        '''Initiate attributes'''
+
+        self.url = url
+        self.pattern = '<span class="TermText notranslate lang-'
+        self.pattern2 = 'en">'
+
+
+    def _find_all(self, txt:str, sub:str):
+        '''Return all the indexes where sub is in txt.'''
+
+        ret = []
+        k = 0
+
+        while True:
+            i = txt.find(sub, k)
+
+            if i == -1:
+                return ret
+
+            ret.append(i)
+            k = i + len(sub)
+
+
+    def _get_html(self):
+        '''Return the html code for the Quizlet page.'''
         
-    lth = len(d)
-    wrong = []
-    i = 0
-    
-    print('Press <ctrl> + C to interrupt, anytime')
-    t0 = dt.now()
-    
-    for j, k in enumerate(d):
+        ses = HTMLSession()
+        
         try:
-            if mode == 2:
-                md = randint(0, 1)
-                md1 = (1, 0)[md]
-                
-            answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, d[k][md])).strip(' ')
+            quizlet = ses.get(self.url)
+        
+        except Exception as err:
+            print(err)
+            return -1
+            
+        return quizlet.text
 
-            if d[k][md1][-1] not in ('$', '*', '7') and len(answer) > 0:
-                if answer[-1] in ('$', '*', '7'):
-                    answer = answer[:-1] # Remove '$' or '*' or '7' at the end of the answer if miss-clicked.
+
+    def _get(self):
+        '''Return two lists of words, first is definition, second is a list of terms.'''
+
+        html = self._get_html()        
+        if html == -1:
+            return -1
             
-            if answer == d[k][md1]:
-                print('Good !')
-                i += 1
-            
+        ind = self._find_all(html, self.pattern)
+
+        lst_1 = []
+        lst_2 = []
+
+        for k, i in enumerate(ind):
+            begin = i + len(self.pattern) + len(self.pattern2)
+
+            w = ''
+            for char in html[begin:]:
+                if char == '<': # html[begin:] is of the form 'word</span>...'
+                    break
+
+                w += char
+
+            if k % 2 == 0:
+                lst_2.append(w)
             else:
-                print('Wrong : word was "{}"'.format(d[k][md1]))
-                wrong.append(d[k][md1])
+                lst_1.append(w)
+
+        return lst_1, lst_2
+
+
+    def get_list(self):
+        '''Return the list of tuples formatted for voc script.'''
+
+        g = self._get()
+        if g == -1:
+            return -1
+            
+        l1, l2 = g
+        ret = []
+
+        for i, j in zip(l1, l2):
+            ret.append((i, j))
+
+        return ret
+
+
+    def download(self, fn):
+        '''Write the list in a file.'''
+
+        l = self.get_list()
+        if l == -1:
+            return -1
+        
+        data = set_list(l) + '\n'
+
+        if isfile(fn):
+            o = ''
+            while o not in ('o', 'n', 'c'):
+                o = input(f"File '{fn}' already exist.\nOverwrite it (o), change name (n), or cancel (c) ?\n>").lower()
+
+            if o == 'c':
+                return -1
+            
+            if o == 'n':
+                return self.download(input('\nFilename :\n>'))
+
+        with open(fn, 'w') as f:
+            f.write(data)
+
+
+##-Main
+class Voc:
     
-        except KeyboardInterrupt:
-            if j == 0:
-                print('')
-                sys.exit()
+    def __init__(self, d):
+        '''
+        Initiate Voc class.
+        
+        - d : he vocabulary list, of the form [('fra', 'ita'), ('fra2', 'ita2'), ...] ;
+        '''
+        
+        self.d = d
+    
+    
+    def _is_good(self, user_answer, good_word):
+        '''Return a bool indicating if the user answer correspond to the good word.'''
+        
+        if good_word[-1] not in ('$', '*', '7') and len(user_answer) > 0:
+            if user_answer[-1] in ('$', '*', '7'):
+                user_answer = user_answer[:-1] # Remove '$' or '*' or '7' at the end of the answer if miss-clicked.
+        
+        if user_answer == good_word:
+            return True
+        
+        for k in (', ', ' / ', ' ; ', '/', ',', ';'):
+            if user_answer in good_word.split(k):
+                print('There is also : {}'.format('"' + '", "'.join(i for i in good_word.split(k) if i != user_answer) + '"'))
+                return True
+        
+        return user_answer == good_word
+    
+    
+    def learn(self, mode=0, n=0):
+        '''
+        Learn by asking for :
+            - term, with definition shown if mode is 0 ;
+            - definition, with term shown if mode is 1.
+        
+        - mode : indicate the learn direction ;
+        - n : the number of words to learn. If n == 0, learn all the words in the list. If 0 < n < len(d), the function remove the words randomly.
+        '''
+        
+        d = list(self.d)
+        
+        if mode not in (0, 1, 2):
+            raise ValueError('The mode should be in (0, 1, 2), but "{}" was found !'.format(mode))
+        
+        if n < 0:
+            raise ValueError('The argument "n" can not be negative ! ("{}" found)'.format(n))
+        
+        if n > len(d):
+            print('n is bigger than the number of words. Only {} words will be learned.\n'.format(len(d)))
+        
+        old_len = len(d)
+        shuffle(d)
+        
+        if n != 0:
+            for k in range(len(d)):
+                if (k + 1) > n:
+                    del d[k]
+        
+        if mode != 2:
+            md = int(mode)
+            md1 = (1, 0)[md]
+            
+        lth = len(d)
+        wrong = []
+        i = 0
+        
+        print('Press <ctrl> + C to interrupt, anytime')
+        t0 = dt.now()
+        
+        for j, k in enumerate(d):
+            try:
+                if mode == 2:
+                    md = randint(0, 1)
+                    md1 = (1, 0)[md]
+                    
+                answer = input('\n{}/{} - {} :\n>'.format(j + 1, lth, k[md])).strip(' ')
                 
-            break
-    
-    t = dt.now() - t0
-    
-    print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s\nTime per word average : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t, t / (i + len(wrong))))
-    
-    if len(wrong) > 0:
-        print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
+                if self._is_good(answer, k[md1]):
+                    print('Good !')
+                    i += 1
+                
+                else:
+                    print('Wrong : word was "{}"'.format(k[md1]))
+                    wrong.append(k[md1])
+        
+            except KeyboardInterrupt:
+                if j == 0:
+                    print('')
+                    sys.exit()
+                    
+                break
+        
+        t = dt.now() - t0
+        
+        print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s\nTime per word average : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t, t / (i + len(wrong))))
+        
+        if len(wrong) > 0:
+            print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
+
 
 
 ##-UI
@@ -272,13 +420,13 @@ class Parser:
 
         self.parser.add_argument(
             '-o', '--opposite',
-            help='Reverse learning mode (if learning italian, write in your lang instead of in italian).',
+            help='Reverse learning mode (write definitions instead of terms).',
             action='store_true'
         )
 
         self.parser.add_argument(
             '-r', '--random',
-            help='Randomise the learning mode (ask in both languages). If used with "-o", only this is taken in account.',
+            help='Randomise the learning mode (ask for both terms and definitions). If used with "-o", only this is taken in account.',
             action='store_true'
         )
 
@@ -292,6 +440,12 @@ class Parser:
             '-a', '--append',
             help='Append new words to an existing file.',
             action='store_true'
+        )
+
+        self.parser.add_argument(
+            '-D', '--download',
+            help='Download a list from a Quizlet link.',
+            metavar='URL'
         )
 
         self.parser.add_argument(
@@ -323,6 +477,10 @@ class Parser:
         elif args.save:
             VocFile(args.listname).write()
         
+        elif args.download != None:
+            GetQuizletVoc(args.download).download(args.listname)
+            print('\nDone.')
+        
         else:
             n = (args.number, 0)[args.number == None]
             
@@ -334,7 +492,7 @@ class Parser:
                 print('The argument "n" can not be negative ! ("{}" found)'.format(n))
                 sys.exit(-1)
             
-            learn(VocFile(args.listname).read(), mode, n)
+            Voc(VocFile(args.listname).read()).learn(mode, n)
 
 
     class Version(argparse.Action):
@@ -353,6 +511,7 @@ class Menu:
         '''Initiate this class'''
         
         pass
+    
     
     def ask_fn(self):
         '''Ask the user for the filename.'''
@@ -383,10 +542,12 @@ class Menu:
             print('    0.Quit')
             print('    ----------------')
             print('    1.Learn a list')
-            print('    2.Learn list with random language input')
-            print('    3.Save a NEW list')
-            print('    4.Append to a list')
-            print('    5.Display a list')
+            print('    2.Learn a list with reversed questions (write definitions instead of terms)')
+            print('    3.Learn list with random language input')
+            print('    4.Save a NEW list')
+            print('    5.Append to a list')
+            print('    6.Display a list')
+            print('    7.Download a list from Quizlet')
             print('    ----------------')
             print('    v.Show version')
             
@@ -401,23 +562,39 @@ class Menu:
                     sys.exit()
             
             elif c == '1':
-                learn(VocFile(self.ask_fn()).read())
+                Voc(VocFile(self.ask_fn()).read()).learn()
                 sleep(1)
             
             elif c == '2':
-                learn(VocFile(self.ask_fn()).read(), mode=2)
+                Voc(VocFile(self.ask_fn()).read()).learn(mode=1)
                 sleep(1)
             
             elif c == '3':
+                Voc(VocFile(self.ask_fn()).read()).learn(mode=2)
+                sleep(1)
+            
+            elif c == '4':
                 VocFile(self.ask_fn()).write()
                 sleep(0.5)
             
-            elif c == '4':
+            elif c == '5':
                 VocFile(self.ask_fn()).extend()
                 sleep(0.5)
             
-            elif c == '5':
+            elif c == '6':
                 VocFile(self.ask_fn()).display()
+                sleep(0.5)
+            
+            elif c == '7':
+                try:
+                    GetQuizletVoc(input('\nURL :\n>')).download(input('\nFilename :\n>'))
+                    
+                except NameError:
+                    print('To do this, you need to install "requests-html" python module, either with `pip install requests-html` or by visiting "https://docs.python-requests.org/projects/requests-html/en/latest/".\n\n')
+                
+                else:
+                    print('\nDone.')
+                    
                 sleep(0.5)
             
             elif c == 'v':
