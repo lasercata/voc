@@ -4,8 +4,8 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.10.10
-# Version   :   v1.4.0
+# Date      :   2021.10.17
+# Version   :   v1.4.1
 # Github    :   https://github.com/lasercata/voc
 #
 #--------------------------------------------------
@@ -168,12 +168,12 @@ class VocFile:
         '''
         
         d = self.read()
-        mx = max(len(d[k][opposite]) for k in d)
+        mx = max(len(k[opposite]) for k in d)
         
         print('\nList "{}" :'.format(self.fn))
         
         for k in d:
-            print('\t{} : {}'.format(set_good_len(d[k][opposite], mx, view_md % 2), d[k][not opposite]))
+            print('\t{} : {}'.format(set_good_len(k[opposite], mx, view_md % 2), k[not opposite]))
 
 
 ##-GetQuizletVoc
