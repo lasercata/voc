@@ -10,7 +10,7 @@
 #
 #--------------------------------------------------
 
-version = '1.4.0'
+version = '1.4.1'
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
@@ -30,13 +30,15 @@ import platform
 #------For parser
 import argparse
 
-#------For Quizlet downloads
-try:
-    from requests_html import HTMLSession
+##------For Quizlet downloads
+#try:
+    #from requests_html import HTMLSession
 
-except ModuleNotFoundError:
-    print("It seems that you don't have the module 'requests_html' installed. It is used to download lists from Quizlet. If you want to install it, enter `pip install requests-html` in your console, or visit 'https://docs.python-requests.org/projects/requests-html/en/latest/'")
-    sleep(1)
+#except ModuleNotFoundError:
+    #print("It seems that you don't have the module 'requests_html' installed. It is used to download lists from Quizlet. If you want to install it, enter `pip install requests-html` in your console, or visit 'https://docs.python-requests.org/projects/requests-html/en/latest/'")
+    #sleep(1)
+
+# Imported in the __init__ method of GetQuizletVoc because it takes time.
 
 ##-Useful functions
 def set_list(lst):
@@ -186,6 +188,16 @@ class GetQuizletVoc:
         self.url = url
         self.pattern = '<span class="TermText notranslate lang-'
         self.pattern2 = 'en">'
+        
+        try:
+            from requests_html import HTMLSession
+
+        except ModuleNotFoundError as err:
+            print('To do this, you need to install "requests-html" python module, either with `pip install requests-html` or by visiting "https://docs.python-requests.org/projects/requests-html/en/latest/".')
+            raise ModuleNotFoundError(err)
+        
+        global HTMLSession
+            
 
 
     def _find_all(self, txt:str, sub:str):
@@ -478,8 +490,15 @@ class Parser:
             VocFile(args.listname).write()
         
         elif args.download != None:
-            GetQuizletVoc(args.download).download(args.listname)
-            print('\nDone.')
+            try:
+                GetQuizletVoc(args.download).download(args.listname)
+            
+            except ModuleNotFoundError:
+                sys.exit()
+            
+            else:
+                lst_name = args.download.split('/')[-1] if args.download.split('/')[-1] != '' else args.download.split('/')[-2]
+                print('\nList "{}" saved as "{}"'.format(lst_name, args.listname))
         
         else:
             n = (args.number, 0)[args.number == None]
@@ -587,13 +606,17 @@ class Menu:
             
             elif c == '7':
                 try:
-                    GetQuizletVoc(input('\nURL :\n>')).download(input('\nFilename :\n>'))
+                    getter = GetQuizletVoc(url)
+                    url = input('\nURL :\n>')
+                    fn = input('\nFilename :\n>')
+                    getter.download(fn)
                     
-                except NameError:
-                    print('To do this, you need to install "requests-html" python module, either with `pip install requests-html` or by visiting "https://docs.python-requests.org/projects/requests-html/en/latest/".\n\n')
+                except ModuleNotFoundError:
+                    sleep(2) #Error message is shown in GetQuizletVoc.__init__.
                 
                 else:
-                    print('\nDone.')
+                    lst_name = url.split('/')[-1] if url.split('/')[-1] != '' else url.split('/')[-2]
+                    print('\nList "{}" saved as "{}"'.format(lst_name, fn))
                     
                 sleep(0.5)
             
