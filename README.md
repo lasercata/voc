@@ -1,6 +1,10 @@
 # voc
 Python3 Argparse script which help to learn vocabulary. Also available in menu console mode (execute it without arguments).
 
+The program ask for term (or definition), and shows if the answer is good or not. If not, it shows what was the right answer. At the end, the succes percentage is shown, with all the missed words.
+
+It is possible to write your own vocabulary list, and you can download onr from a Quizlet link.
+
 ## Installing
 Download the script `voc.py` ;
 
