@@ -4,13 +4,13 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.10.17
-# Version   :   v1.4.1
+# Date      :   2021.10.22
+# Version   :   v1.4.2
 # Github    :   https://github.com/lasercata/voc
 #
 #--------------------------------------------------
 
-version = '1.4.1'
+version = '1.4.2'
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
@@ -96,7 +96,7 @@ class VocFile:
         if not isfile(self.fn):
             raise ValueError(f"Voc: cannot access '{self.fn}': No such file")
         
-        with open(self.fn, 'r') as f:
+        with open(self.fn, 'r', encoding='utf-8') as f:
             d_str = f.read()
         
         d = literal_eval(d_str)
@@ -134,7 +134,7 @@ class VocFile:
         
         d_str = set_list(d) + '\n'
         
-        with open(self.fn, 'w') as f:
+        with open(self.fn, 'w', encoding='utf-8') as f:
             f.write(d_str)
     
     
@@ -297,7 +297,7 @@ class GetQuizletVoc:
             if o == 'n':
                 return self.download(input('\nFilename :\n>'))
 
-        with open(fn, 'w') as f:
+        with open(fn, 'w', encoding='utf-8') as f:
             f.write(data)
 
 
@@ -357,9 +357,7 @@ class Voc:
         shuffle(d)
         
         if n != 0:
-            for k in range(len(d)):
-                if (k + 1) > n:
-                    del d[k]
+            d = d[:n]
         
         if mode != 2:
             md = int(mode)
@@ -612,7 +610,7 @@ class Menu:
                     getter.download(fn)
                     
                 except ModuleNotFoundError:
-                    sleep(2) #Error message is shown in GetQuizletVoc.__init__.
+                    sleep(2) #Error message is shown in GetQuizletVoc.__init__
                 
                 else:
                     lst_name = url.split('/')[-1] if url.split('/')[-1] != '' else url.split('/')[-2]
