@@ -4,7 +4,7 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.10.22
+# Date      :   2021.11.02
 # Version   :   v1.4.2
 # Github    :   https://github.com/lasercata/voc
 #
@@ -87,16 +87,20 @@ class VocFile:
         #if fn[-4:] != '.txt':
             #fn += '.txt'
         
+        if type(fn) == str:
+            print('In VocFile.__init__: fn is a string. It should be a string list.')
+            fn = [fn]
+
         self.fn = fn
     
     
-    def read(self):
-        '''Return the dict in self.fn'''
+    def _read_file(self, fn):
+        '''Return the dict of fn'''
         
-        if not isfile(self.fn):
-            raise ValueError(f"Voc: cannot access '{self.fn}': No such file")
+        if not isfile(fn):
+            raise ValueError(f"Voc: cannot access '{fn}': No such file")
         
-        with open(self.fn, 'r', encoding='utf-8') as f:
+        with open(fn, 'r', encoding='utf-8') as f:
             d_str = f.read()
         
         d = literal_eval(d_str)
@@ -105,6 +109,16 @@ class VocFile:
             return [d[k] for k in d]
         
         return d
+
+
+    def read(self):
+        '''Read all the files in the list `self.fn`and return the concatenation of the lists.'''
+
+        ret = []
+        for l in self.fn:
+            ret += self._read_file(l)
+
+        return ret
     
     
     def _get_dct(self, sep=';'):
@@ -132,19 +146,22 @@ class VocFile:
     def _write(self, d):
         '''Write `d` in the file.'''
         
+        if len(self.fn) > 1:
+            print('\n\nYou specified multiple files, but content will only be saved in the first one : "{}"'.format(self.fn[0]))
+
         d_str = set_list(d) + '\n'
         
-        with open(self.fn, 'w', encoding='utf-8') as f:
+        with open(self.fn[0], 'w', encoding='utf-8') as f:
             f.write(d_str)
     
     
     def write(self):
         '''Ask user for `d_str` and write it in `self.fn`'''
         
-        if isfile(self.fn):
+        if isfile(self.fn[0]):
             o = 0
             while o not in ('y', 'n'):
-                o = input(f"File '{self.fn}' already exist.\nOverwrite it (y/n) ?\n>")
+                o = input(f"File '{self.fn[0]}' already exist.\nOverwrite it (y/n) ?\n>")
             
             if o == 'n':
                 return 0
@@ -418,7 +435,8 @@ class Parser:
 
         self.parser.add_argument(
             'listname',
-            help='List to learn.'
+            nargs='*',
+            help='List[s] to learn.'
         )
 
         self.parser.add_argument(
@@ -477,6 +495,10 @@ class Parser:
 
         #------Check arguments
         args = self.parser.parse_args()
+
+        if args.listname == []:
+            print('voc: error: argument listname is requied')
+            sys.exit(-1)
         
         if args.display:
             VocFile(args.listname).display(args.opposite, (args.number, 0)[args.number == None])
@@ -489,14 +511,15 @@ class Parser:
         
         elif args.download != None:
             try:
-                GetQuizletVoc(args.download).download(args.listname)
+                if GetQuizletVoc(args.download).download(args.listname[0]) == -1:
+                    return -1
             
             except ModuleNotFoundError:
                 sys.exit()
             
             else:
                 lst_name = args.download.split('/')[-1] if args.download.split('/')[-1] != '' else args.download.split('/')[-2]
-                print('\nList "{}" saved as "{}"'.format(lst_name, args.listname))
+                print('\nList "{}" saved as "{}"'.format(lst_name, args.listname[0]))
         
         else:
             n = (args.number, 0)[args.number == None]
@@ -604,8 +627,8 @@ class Menu:
             
             elif c == '7':
                 try:
-                    getter = GetQuizletVoc(url)
                     url = input('\nURL :\n>')
+                    getter = GetQuizletVoc(url)
                     fn = input('\nFilename :\n>')
                     getter.download(fn)
                     
