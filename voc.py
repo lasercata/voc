@@ -4,7 +4,7 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.11.02
+# Date      :   2021.11.04
 # Version   :   v1.4.2
 # Github    :   https://github.com/lasercata/voc
 #
@@ -118,6 +118,7 @@ class VocFile:
         for l in self.fn:
             ret += self._read_file(l)
 
+        ret = list(set(ret)) #Remove duplicates
         return ret
     
     
@@ -140,7 +141,7 @@ class VocFile:
             except KeyboardInterrupt:
                 break
 
-        return d
+        return list(set(d)) #Remove duplicates
     
     
     def _write(self, d):
@@ -153,6 +154,8 @@ class VocFile:
         
         with open(self.fn[0], 'w', encoding='utf-8') as f:
             f.write(d_str)
+        
+        print("\n\nFile '{}' written.".format(self.fn[0]))
     
     
     def write(self):
