@@ -428,9 +428,9 @@ class Voc:
             if input('\nRetry missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
                 Voc(wrong_d).learn(mode, n)
 
-        elif len(wrong) > 4:
-            if input('\n\nSave the list of missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
-                VocFile([input('\nFilename :\n>')]).write(wrong_d)
+            elif len(wrong) > 4:
+                if input('\n\nSave the list of missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
+                    VocFile([input('\nFilename :\n>')]).write(wrong_d)
 
 
 
