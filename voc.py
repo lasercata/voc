@@ -360,7 +360,7 @@ class Voc:
             - term, with definition shown if mode is 0 ;
             - definition, with term shown if mode is 1.
         
-        - mode : indicate the learn direction ;
+        - mode : indicate the learning mode (0 : learn definition, 1 : learn term, 2 : random) ;
         - n : the number of words to learn. If n == 0, learn all the words in the list. If 0 < n < len(d), the function remove the words randomly.
         '''
         
@@ -423,6 +423,10 @@ class Voc:
         
         if len(wrong) > 0:
             print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
+
+        if len(wrong) > 1:
+            if input('\nRetry missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
+                Voc(wrong_d).learn(mode, n)
 
         if len(wrong) > 4:
             if input('\n\nSave the list of missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
