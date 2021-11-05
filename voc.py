@@ -428,7 +428,7 @@ class Voc:
             if input('\nRetry missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
                 Voc(wrong_d).learn(mode, n)
 
-        if len(wrong) > 4:
+        elif len(wrong) > 4:
             if input('\n\nSave the list of missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
                 VocFile([input('\nFilename :\n>')]).write(wrong_d)
 
@@ -571,25 +571,25 @@ class Menu:
     def ask_fn(self):
         '''Ask the user for the filename.'''
         
-        fn = input('Enter the filename :\n>')
+        fn = input('\nEnter the filename :\n>')
             
         if (fn[-4:] != '.txt') and (not isfile(fn)) and (isfile(fn + '.txt')):
             fn += '.txt'
         
-        return fn
+        return [fn]
     
     
     def show(self):
         
         try:
-            self.show_()
+            self._show()
         
         except KeyboardInterrupt:
             if input('Exit ? (y/n)') == 'y':
                 sys.exit()
         
     
-    def show_(self):
+    def _show(self):
         '''Show a menu'''
         
         while True:
