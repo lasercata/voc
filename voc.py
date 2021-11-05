@@ -4,13 +4,13 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.11.04
-# Version   :   v1.4.2
+# Date      :   2021.11.05
+# Version   :   v1.4.3
 # Github    :   https://github.com/lasercata/voc
 #
 #--------------------------------------------------
 
-version = '1.4.2'
+version = '1.4.3'
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
@@ -158,8 +158,8 @@ class VocFile:
         print("\n\nFile '{}' written.".format(self.fn[0]))
     
     
-    def write(self):
-        '''Ask user for `d_str` and write it in `self.fn`'''
+    def write(self, d=None):
+        '''Ask user for `d_str` if `d` is None, otherwise use `d`, and write it in `self.fn`'''
         
         if isfile(self.fn[0]):
             o = 0
@@ -169,7 +169,9 @@ class VocFile:
             if o == 'n':
                 return 0
         
-        d = self._get_dct()
+        if d == None:
+            d = self._get_dct()
+
         self._write(d)
     
     
@@ -189,10 +191,10 @@ class VocFile:
         - view_md : an int which, if odd, change the view mode (space before the words in the first column instead of after).
         '''
         
-        d = self.read()
+        d = sorted(self.read(), key=lambda x: x[opposite])
         mx = max(len(k[opposite]) for k in d)
         
-        print('\nList "{}" :'.format(self.fn))
+        print('\nList "{}" :'.format('", "'.join(self.fn)))
         
         for k in d:
             print('\t{} : {}'.format(set_good_len(k[opposite], mx, view_md % 2), k[not opposite]))
@@ -200,7 +202,7 @@ class VocFile:
 
 ##-GetQuizletVoc
 class GetQuizletVoc:
-    '''Fetch a vocabulary from Quizlet'''
+    '''Fetch a vocabulary list from Quizlet'''
 
     def __init__(self, url):
         '''Initiate attributes'''
@@ -385,6 +387,7 @@ class Voc:
             
         lth = len(d)
         wrong = []
+        wrong_d = []
         i = 0
         
         print('Press <ctrl> + C to interrupt, anytime')
@@ -405,6 +408,7 @@ class Voc:
                 else:
                     print('Wrong : word was "{}"'.format(k[md1]))
                     wrong.append(k[md1])
+                    wrong_d.append(k)
         
             except KeyboardInterrupt:
                 if j == 0:
@@ -419,6 +423,10 @@ class Voc:
         
         if len(wrong) > 0:
             print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
+
+        if len(wrong) > 4:
+            if input('\n\nSave the list of missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
+                VocFile([input('\nFilename :\n>')]).write(wrong_d)
 
 
 
