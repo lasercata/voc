@@ -4,18 +4,18 @@
 #--------------------------------------------------
 #
 # Author    :   Lasercata
-# Date      :   2021.11.05
-# Version   :   v1.4.3
+# Date      :   2022.05.08
+# Version   :   v1.4.4
 # Github    :   https://github.com/lasercata/voc
 #
 #--------------------------------------------------
 
-version = '1.4.3'
+version = '1.4.4'
 
 # Todo :
     # Do score for words, to show them with a higher probability next time, or more often ;
 
-##-import
+##-Import
 from random import shuffle, randint
 from ast import literal_eval
 
@@ -103,7 +103,11 @@ class VocFile:
         with open(fn, 'r', encoding='utf-8') as f:
             d_str = f.read()
         
-        d = literal_eval(d_str)
+        try:
+            d = literal_eval(d_str)
+
+        except Exception:
+            raise ValueError(f'The file "{fn}" is not in the right format !')
         
         if type(d) == dict:
             return [d[k] for k in d]
@@ -241,16 +245,27 @@ class GetQuizletVoc:
     def _get_html(self):
         '''Return the html code for the Quizlet page.'''
         
-        ses = HTMLSession()
+        if self.url[:7] == 'file://':
+            with open(self.url[7:]) as f:
+                html = f.read()
         
-        try:
-            quizlet = ses.get(self.url)
+        elif self.url[0] == '/' or self.url[:3] == 'C:\\':
+            with open(self.url) as f:
+                html = f.read()
         
-        except Exception as err:
-            print(err)
-            return -1
+        else:
+            ses = HTMLSession()
             
-        return quizlet.text
+            try:
+                quizlet = ses.get(self.url)
+            
+            except Exception as err:
+                print(err)
+                return -1
+                
+            html = quizlet.text
+        
+        return html
 
 
     def _get(self):
@@ -419,10 +434,10 @@ class Voc:
         
         t = dt.now() - t0
         
-        print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s\nTime per word average : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t, t / (i + len(wrong))))
-        
         if len(wrong) > 0:
             print('\n\nTo revise : \n\t{}'.format('\n\t'.join(wrong)))
+        
+        print('\nScore : {} good, {} wrong, on {} words (out of {} in list).\nPercentage : {}% good\nTime : {} s\nTime per word average : {} s'.format(i, len(wrong), i + len(wrong), old_len, round(i / (i + len(wrong)) * 100), t, t / (i + len(wrong))))
 
         if len(wrong) > 1:
             if input('\nRetry missed words ? (y/n)\n>').lower() in ('y', 'yes', 'o', 'oui'):
